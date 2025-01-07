@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheel Spinner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .spinner-container {
+            height: 200px;
+            width: 300px;
+            overflow: hidden;
+            border: 2px solid #ccc;
+            margin: auto;
+            position: relative;
+        }
+        .spinner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: transform 5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .spinner div {
+            padding: 10px;
+            height: 40px;
+            line-height: 40px;
+            border-bottom: 1px solid #ddd;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .highlight {
+            color: red;
+            font-weight: bold;
+        }
+        #dynamic-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .bold-underline {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="dynamic-title"></div>
+    <div class="spinner-container">
+        <div class="spinner" id="spinner"></div>
+    </div>
+    <button onclick="spinWheel()">Chance it!</button>
+    <div id="result">
+        <h3>Congrats, you got:</h3>
+        <div id="chosen" class="highlight"></div>
+    </div>
+
+    <script>
+        // Fetch a random option for the initial title
+        function initializeTitle() {
+            fetch('/random_option', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    updateTitle(data.random_option);
+                }
+            });
+        }
+
+        // Update the title dynamically
+        function updateTitle(option) {
+            const titleElement = document.getElementById('dynamic-title');
+            titleElement.innerHTML = `<span class="bold-underline">${option}</span> or chance it?`;
+        }
+
+        function spinWheel() {
+            fetch('/spin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    animateSpinner(data.options, data.chosen_index, data.chosen);
+                }
+            });
+        }
+
+        function animateSpinner(options, chosenIndex, chosen) {
+            const spinner = document.getElementById('spinner');
+            spinner.innerHTML = '';
+
+            // Create seamless loop with duplicated options
+            const loopedOptions = [...options, ...options, ...options];
+            loopedOptions.forEach(option => {
+                const div = document.createElement('div');
+                div.textContent = option;
+                spinner.appendChild(div);
+            });
+
+            // Calculate offset to center the chosen option
+            const optionHeight = 40; // Each option's height
+            const viewportHeight = 200; // Spinner container height
+            const centerOffset = viewportHeight / 2 - optionHeight / 2;
+            const scrollPosition = ((options.length * 2) + chosenIndex) * optionHeight - centerOffset;
+
+            // Animate spinner
+            spinner.style.transform = `translateY(-${scrollPosition}px)`;
+
+            // Update title with chosen option after animation
+            setTimeout(() => {
+                updateTitle(chosen);
+                document.getElementById('chosen').textContent = chosen;
+                spinner.style.transition = ''; // Reset transition for next spin
+            }, 5000);
+        }
+
+        // Initialize the title when the page loads
+        document.addEventListener('DOMContentLoaded', initializeTitle);
+    </script>
+</body>
+</html>
