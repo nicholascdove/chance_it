@@ -11,7 +11,7 @@ GOOGLE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gv
 
 def load_options_from_google_sheet():
     try:
-        response = requests.get(GOOGLE_SHEET_URL)
+        response = requests.get(GOOGLE_SHEET_URL, verify=False)
         response.raise_for_status()
         options = []
         csv_reader = csv.reader(response.text.splitlines())
